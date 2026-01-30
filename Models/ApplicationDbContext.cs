@@ -22,6 +22,8 @@ namespace Mailing_Utility.Data
 
         public virtual DbSet<EmailDirectory> EmailDirectories { get; set; }
 
+        public virtual DbSet<EmailQueue> EmailQueues { get; set; }
+
         public virtual DbSet<Event> Events { get; set; }
 
         public virtual DbSet<EventType> EventTypes { get; set; }

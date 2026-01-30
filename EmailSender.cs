@@ -12,15 +12,17 @@ public class EmailService
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
     }
 
-    public async Task SendEmailAsync(List<MailboxAddress> recipient, string subject, string htmlBody)
+    public async Task<bool> SendEmailAsync(MailboxAddress recipient, string subject, string htmlBody)
     {
+        bool status = false;
+
         var emailSettings = _configuration.GetSection("EmailSettings");
 
         var message = new MimeMessage();
         message.From.Add(new MailboxAddress(
             emailSettings["FromName"],
             emailSettings["FromEmail"]));
-        message.To.AddRange(recipient);
+        message.To.Add(recipient);
         message.Subject = subject;
         message.Headers.Add("X-Mailer", "AIT Notification System");
         message.Headers.Add("Precedence", "bulk");
@@ -39,6 +41,7 @@ public class EmailService
             // Accept the invalid certificate
             return true;
         };
+
         try
         {
             await client.ConnectAsync(
@@ -47,6 +50,7 @@ public class EmailService
                 SecureSocketOptions.StartTls);
 
             await client.SendAsync(message);
+            status = true;
         }
         catch (Exception ex)
         {
@@ -56,5 +60,6 @@ public class EmailService
         {
             await client.DisconnectAsync(true);
         }
+        return status;
     }
 }

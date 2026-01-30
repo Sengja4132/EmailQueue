@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using MimeKit;
 
 internal class Program
 {
@@ -60,9 +61,23 @@ internal class Program
             var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
             // 🔥 EF CORE USAGE HERE
-            //var items = await db..ToListAsync();
+            var items = await db.EmailQueues.Where(p => p.DateSentOut == null).OrderBy(p => p.DateCreated).Take(50).ToListAsync();
 
-            // await emailService.SendEmailAsync(...);
+            foreach (var item in items)
+            {
+                try
+                {
+                    bool result = await emailService.SendEmailAsync(new MailboxAddress(item.Recipient, item.Recipient), item.Subject, item.HtmlContent);
+                    if (result)
+                    {
+                        item.DateSentOut = DateTime.Now;
+                    }
+                    db.SaveChanges();
+                } catch (Exception ex)
+                {
+                    logger.LogError(ex.Message);
+                }
+            }
 
             logger.LogInformation("Task finished successfully at {Time}", DateTimeOffset.Now);
             return 0;
